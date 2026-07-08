@@ -39,14 +39,22 @@ const PANEL_SEL =
   'ytd-engagement-panel-section-list-renderer[target-id="engagement-panel-searchable-transcript"]';
 const EXPANDED = "ENGAGEMENT_PANEL_VISIBILITY_EXPANDED";
 
+const SEGMENT_SEL = "transcript-segment-view-model, ytd-transcript-segment-renderer";
+
 function getPanel() {
   const all = [...document.querySelectorAll(PANEL_SEL)];
-  return all.find((p) => p.getAttribute("target-id") === MODERN) ?? all[0] ?? null;
+  return (
+    // chaptered videos populate the legacy panel while an empty modern panel
+    // also sits in the DOM — prefer whichever panel actually has segments
+    all.find((p) => p.querySelector(SEGMENT_SEL)) ??
+    all.find((p) => p.getAttribute("target-id") === MODERN) ??
+    all[0] ??
+    null
+  );
 }
 
 function getTranscriptText() {
-  const rows =
-    getPanel()?.querySelectorAll("transcript-segment-view-model, ytd-transcript-segment-renderer") ?? [];
+  const rows = getPanel()?.querySelectorAll(SEGMENT_SEL) ?? [];
   return [...rows]
     .map((s) => {
       const ts =
@@ -93,10 +101,10 @@ function getDescription() {
 
 // Format: {prompt}\n\nTranscript:\n{transcript}\n\nVideo Description:\n{description}
 // Empty prompt / disabled description just drop their section.
-function buildPrompt(s) {
+function buildPrompt(s, transcript) {
   const parts = [];
   if (s.prompt.trim()) parts.push(s.prompt.trim());
-  parts.push("Transcript:\n" + getTranscriptText());
+  parts.push("Transcript:\n" + transcript);
   if (s.includeDescription) {
     const desc = getDescription();
     if (desc) parts.push("Video Description:\n" + desc);
@@ -113,9 +121,10 @@ async function copyTranscript() {
 
 async function sendToAI() {
   if (!alive()) return toast("Extension was updated — refresh the page (F5).");
-  if (!getTranscriptText()) return toast("Transcript not loaded yet — wait a second and retry.");
+  const transcript = getTranscriptText(); // build once — reused in the prompt
+  if (!transcript) return toast("Transcript not loaded yet — wait a second and retry.");
   const s = await chrome.storage.sync.get(DEFAULT_SETTINGS);
-  const prompt = buildPrompt(s);
+  const prompt = buildPrompt(s, transcript);
   await navigator.clipboard.writeText(prompt); // always: fallback if the fill fails
   await chrome.storage.local.set({ yt2ai: { prompt, ts: Date.now() } });
   window.open(AI_TARGETS[s.provider] ?? AI_TARGETS.ChatGPT, "_blank");
@@ -135,8 +144,9 @@ function makeButton(label, title, onClick) {
   return b;
 }
 
-// Insert the button row inside the panel, as a sibling ABOVE #content —
-// injecting into YouTube's header flexbox clips/hides foreign children.
+// Insert the button row at the TOP of #content — a sibling above #content
+// overlaps it on legacy (chaptered) panels, and YouTube's header flexbox
+// clips/hides foreign children.
 function ensureBar(panel) {
   if (!alive() || panel.querySelector(".yt2ai-bar")) return;
   const content = panel.querySelector("#content");
@@ -152,7 +162,9 @@ function ensureBar(panel) {
   aiBtn.style.display = "flex";
   aiBtn.style.alignItems = "center";
   aiBtn.style.gap = "6px";
-  aiBtn.innerHTML = SPARKLE_SVG;
+  // unique gradient id — the bar can exist in two panels (one hidden), and a
+  // duplicate id makes url(#...) resolve to the hidden copy → invisible icon
+  aiBtn.innerHTML = SPARKLE_SVG.replaceAll("yt2ai-grad", "yt2ai-grad-" + Math.random().toString(36).slice(2));
   const aiLabel = document.createElement("span");
   aiLabel.textContent = "AI";
   aiBtn.append(aiLabel);
@@ -162,7 +174,7 @@ function ensureBar(panel) {
   });
   bar.append(aiBtn);
 
-  content.before(bar);
+  content.prepend(bar);
 }
 
 // Flipping the panel's visibility attribute shows it but never triggers the data
@@ -192,7 +204,9 @@ function activate() {
     if (!panel) return;
 
     ensureBar(panel);
-    if (getTranscriptText()) return clearInterval(timer); // segments loaded — done
+    // cheap existence check — building the full transcript here would walk
+    // every segment (thousands of nodes on long videos) twice a second
+    if (panel.querySelector(SEGMENT_SEL)) return clearInterval(timer);
     if (!opened) opened = clickShowTranscript();
     // ponytail: last resort when no description button exists — panel opens but may spin
     if (!opened && tries > 6 && panel.getAttribute("visibility") !== EXPANDED)
