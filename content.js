@@ -186,10 +186,13 @@ function clickShowTranscript() {
     'ytd-video-description-transcript-section-renderer button, button[aria-label="Show transcript"]'
   );
   if (!btn) return false;
+  // Opening the panel scrolls the page; pin the scroll position back for ~1s
+  // (covers YouTube's async focus/scroll) then let go.
   const x = scrollX, y = scrollY;
+  const pin = () => scrollTo(x, y);
+  addEventListener("scroll", pin, true);
   btn.click();
-  requestAnimationFrame(() => scrollTo(x, y));
-  setTimeout(() => scrollTo(x, y), 300); // click scrolls async too — restore again
+  setTimeout(() => removeEventListener("scroll", pin, true), 1000);
   return true;
 }
 
