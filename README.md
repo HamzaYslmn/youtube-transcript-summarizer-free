@@ -11,6 +11,8 @@ Click the extension icon to choose your AI provider, edit the prompt, and toggle
 
 > **Why isn't this on the Chrome Web Store?** Google charges a $5 developer fee. This extension is free, so: manual install. It takes 30 seconds.
 
+![preview](docs/image.png)
+
 ## Install
 
 1. **[⬇ Download ZIP](https://github.com/HamzaYslmn/youtube-transcript-summarizer-free/archive/refs/heads/main.zip)** and extract it
@@ -38,6 +40,3 @@ Video Description:
 {video description}
 ```
 
-## License
-
-[MIT](LICENSE)
