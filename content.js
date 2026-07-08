@@ -4,7 +4,7 @@
 const DEFAULT_SETTINGS = {
   provider: "ChatGPT",
   prompt: "Summarize this YouTube video transcript. Give key points with timestamps.",
-  includeDescription: true,
+  includeDescription: false,
 };
 
 // Gemini-style sparkle: big 4-point star + small one, blue→purple gradient
@@ -72,14 +72,23 @@ function toast(msg) {
   setTimeout(() => t.remove(), 3000);
 }
 
-// Full description text is in the DOM even while visually collapsed — clone it
-// and drop the "…more" expander button so its label doesn't leak into the text.
+// Collapsed description only renders the truncated "…more" snippet — click
+// expand to make YouTube render the full text, read it, then collapse again.
 function getDescription() {
   const el = document.querySelector("#description-inline-expander");
   if (!el) return "";
-  const clone = el.cloneNode(true);
-  clone.querySelectorAll("tp-yt-paper-button, button, #expand, #collapse").forEach((b) => b.remove());
-  return clone.textContent.trim();
+  const strip = (node) => {
+    const clone = node.cloneNode(true);
+    clone.querySelectorAll("tp-yt-paper-button, button, #expand, #collapse").forEach((b) => b.remove());
+    return clone.textContent.trim();
+  };
+  const expandBtn = el.querySelector("#expand");
+  const wasCollapsed = expandBtn && expandBtn.offsetParent !== null; // visible = collapsed
+  if (wasCollapsed) expandBtn.click();
+  // read #expanded only — the hidden snippet would duplicate the first lines
+  const text = strip(el.querySelector("#expanded") ?? el);
+  if (wasCollapsed) el.querySelector("#collapse")?.click();
+  return text;
 }
 
 // Format: {prompt}\n\nTranscript:\n{transcript}\n\nVideo Description:\n{description}

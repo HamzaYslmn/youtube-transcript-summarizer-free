@@ -2,7 +2,7 @@
 const DEFAULT_SETTINGS = {
   provider: "ChatGPT",
   prompt: "Summarize this YouTube video transcript. Give key points with timestamps.",
-  includeDescription: true,
+  includeDescription: false,
 };
 
 const $ = (sel) => document.querySelector(sel);
