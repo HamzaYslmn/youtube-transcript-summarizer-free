@@ -5,6 +5,7 @@ const DEFAULT_SETTINGS = {
   provider: "ChatGPT",
   prompt: "Summarize this YouTube video transcript. Give key points with timestamps.",
   includeDescription: false,
+  tempChat: true,
 };
 
 // Gemini-style sparkle: big 4-point star + small one, blue→purple gradient
@@ -23,12 +24,12 @@ const alive = () => chrome.runtime?.id != null;
 
 // Transcripts are far too long for URL prefill (~12KB cap → 414s), so the
 // prompt always travels via storage: ai-inject.js types it into the editor
-// when it sees the #yt2ai marker. Temp chat comes free via URL param on
-// ChatGPT/Claude; on Gemini ai-inject.js clicks the temp button.
+// when it sees the #yt2ai marker. Temp chat (on by default, popup setting)
+// comes via URL param on ChatGPT/Claude; on Gemini ai-inject.js clicks the temp button.
 const AI_TARGETS = {
-  Claude:  "https://claude.ai/new?incognito=#yt2ai",
-  ChatGPT: "https://chatgpt.com/?temporary-chat=true#yt2ai",
-  Gemini:  "https://gemini.google.com/app#yt2ai",
+  Claude:  (temp) => `https://claude.ai/new${temp ? "?incognito=" : ""}#yt2ai`,
+  ChatGPT: (temp) => `https://chatgpt.com/${temp ? "?temporary-chat=true" : ""}#yt2ai`,
+  Gemini:  () => "https://gemini.google.com/app#yt2ai",
 };
 
 // YouTube ships two transcript panels: the new "PAmodern_transcript_view" and the
@@ -126,9 +127,9 @@ async function sendToAI() {
   const s = await chrome.storage.sync.get(DEFAULT_SETTINGS);
   const prompt = buildPrompt(s, transcript);
   await navigator.clipboard.writeText(prompt); // always: fallback if the fill fails
-  await chrome.storage.local.set({ yt2ai: { prompt, ts: Date.now() } });
-  window.open(AI_TARGETS[s.provider] ?? AI_TARGETS.ChatGPT, "_blank");
-  toast(`Opening ${s.provider} (temp chat) — prompt copied, paste (Ctrl+V) if the chat is empty.`);
+  await chrome.storage.local.set({ yt2ai: { prompt, temp: s.tempChat, ts: Date.now() } });
+  window.open((AI_TARGETS[s.provider] ?? AI_TARGETS.ChatGPT)(s.tempChat), "_blank");
+  toast(`Opening ${s.provider}${s.tempChat ? " (temp chat)" : ""} — prompt copied, paste (Ctrl+V) if the chat is empty.`);
 }
 
 function makeButton(label, title, onClick) {

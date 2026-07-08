@@ -5,9 +5,9 @@ Free Chrome extension — no API keys, no accounts, no tracking. It auto-opens t
 | Button | What it does |
 |---|---|
 | 📋 **Copy** | Copies the transcript with timestamps to your clipboard |
-| ✨ **AI** | Opens Claude, ChatGPT, or Gemini in a new tab — temporary/incognito chat, transcript pre-filled |
+| ✨ **AI** | Opens Claude, ChatGPT, or Gemini in a new tab — temporary/incognito chat (on by default), transcript pre-filled |
 
-Click the extension icon to choose your AI provider, edit the prompt, and toggle including the video description.
+Click the extension icon to choose your AI provider, edit the prompt, toggle including the video description, and turn temporary chat off if you want conversations saved to your AI history.
 
 > **Why isn't this on the Chrome Web Store?** Google charges a $5 developer fee. This extension is free, so: manual install. It takes 30 seconds.
 
@@ -24,7 +24,7 @@ Open any YouTube video that has a transcript — the panel opens by itself with 
 
 ## How it works
 
-- Temp chat opens via URL param on ChatGPT (`?temporary-chat=true`) and Claude (`?incognito=`); on Gemini a helper script clicks the temp-chat button
+- Temp chat (when enabled) opens via URL param on ChatGPT (`?temporary-chat=true`) and Claude (`?incognito=`); on Gemini a helper script clicks the temp-chat button
 - The prompt is too long for a URL, so the helper script types it into the editor on all three sites
 - The prompt is always copied to your clipboard too — if a site's UI changed, just paste (Ctrl+V)
 

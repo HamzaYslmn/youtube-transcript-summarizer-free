@@ -3,6 +3,7 @@ const DEFAULT_SETTINGS = {
   provider: "ChatGPT",
   prompt: "Summarize this YouTube video transcript. Give key points with timestamps.",
   includeDescription: false,
+  tempChat: true,
 };
 
 const $ = (sel) => document.querySelector(sel);
@@ -25,6 +26,7 @@ function save() {
     provider: activeProvider(),
     prompt: $("#prompt").value,
     includeDescription: $("#desc").checked,
+    tempChat: $("#temp").checked,
   });
   $("#saved").style.visibility = "visible";
   clearTimeout(flashTimer);
@@ -34,6 +36,7 @@ function save() {
 chrome.storage.sync.get(DEFAULT_SETTINGS).then((s) => {
   $("#prompt").value = s.prompt;
   $("#desc").checked = s.includeDescription;
+  $("#temp").checked = s.tempChat;
   render(s.provider);
 });
 
@@ -43,7 +46,7 @@ providerBtns.forEach((b) =>
     save();
   })
 );
-for (const id of ["#prompt", "#desc"]) {
+for (const id of ["#prompt", "#desc", "#temp"]) {
   $(id).addEventListener("input", () => {
     render(activeProvider());
     save();

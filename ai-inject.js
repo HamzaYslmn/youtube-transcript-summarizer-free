@@ -34,8 +34,9 @@ async function run() {
   chrome.storage.local.remove("yt2ai");
 
   // ChatGPT/Claude are already in temp mode via URL param — hunting for a
-  // "temporary" button there would toggle it back OFF. Gemini only.
-  if (location.host.includes("gemini")) {
+  // "temporary" button there would toggle it back OFF. Gemini only, and only
+  // when the user left temp chat enabled.
+  if (yt2ai.temp && location.host.includes("gemini")) {
     // short wait only — the prompt fill must not sit behind a long toggle hunt
     const toggle = await waitFor(findTempToggle, 3_000);
     if (toggle) {
