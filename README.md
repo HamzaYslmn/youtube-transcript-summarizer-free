@@ -24,8 +24,8 @@ Open any YouTube video that has a transcript — the panel opens by itself with 
 
 ## How it works
 
-- ChatGPT gets the prompt via URL (`?temporary-chat=true&prompt=`)
-- Claude and Gemini have no such URL support, so a helper script clicks their incognito/temp-chat button and types the prompt in
+- Temp chat opens via URL param on ChatGPT (`?temporary-chat=true`) and Claude (`?incognito=`); on Gemini a helper script clicks the temp-chat button
+- The prompt is too long for a URL, so the helper script types it into the editor on all three sites
 - The prompt is always copied to your clipboard too — if a site's UI changed, just paste (Ctrl+V)
 
 Message format:

@@ -26,7 +26,7 @@
       "run_at": "document_idle"
     },
     {
-      "matches": ["https://claude.ai/*", "https://gemini.google.com/*"],
+      "matches": ["https://chatgpt.com/*", "https://claude.ai/*", "https://gemini.google.com/*"],
       "js": ["ai-inject.js"],
       "run_at": "document_idle"
     }

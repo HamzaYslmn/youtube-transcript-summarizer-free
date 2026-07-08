@@ -21,15 +21,14 @@ const SPARKLE_SVG =
 // call throws "Extension context invalidated" — check this before chrome APIs.
 const alive = () => chrome.runtime?.id != null;
 
-// ponytail: ~12KB URL cap — past it, servers 414; clipboard carries the payload instead.
-const MAX_URL_LEN = 12000;
-
-// Claude & Gemini have no temp-chat URL param — ai-inject.js clicks the
-// incognito/temp button and fills the prompt when it sees the #yt2ai marker.
+// Transcripts are far too long for URL prefill (~12KB cap → 414s), so the
+// prompt always travels via storage: ai-inject.js types it into the editor
+// when it sees the #yt2ai marker. Temp chat comes free via URL param on
+// ChatGPT/Claude; on Gemini ai-inject.js clicks the temp button.
 const AI_TARGETS = {
-  Claude:  { inject: "https://claude.ai/new#yt2ai" },
-  ChatGPT: { url: (q) => `https://chatgpt.com/?temporary-chat=true&prompt=${q}` },
-  Gemini:  { inject: "https://gemini.google.com/app#yt2ai" },
+  Claude:  "https://claude.ai/new?incognito=#yt2ai",
+  ChatGPT: "https://chatgpt.com/?temporary-chat=true#yt2ai",
+  Gemini:  "https://gemini.google.com/app#yt2ai",
 };
 
 // YouTube ships two transcript panels: the new "PAmodern_transcript_view" and the
@@ -107,18 +106,10 @@ async function sendToAI() {
   if (!alive()) return toast("Extension was updated — refresh the page (F5).");
   if (!getTranscriptText()) return toast("Transcript not loaded yet — wait a second and retry.");
   const s = await chrome.storage.sync.get(DEFAULT_SETTINGS);
-  const target = AI_TARGETS[s.provider] ?? AI_TARGETS.ChatGPT;
   const prompt = buildPrompt(s);
-  await navigator.clipboard.writeText(prompt); // always: fallback if prefill fails
-  let url;
-  if (target.inject) {
-    await chrome.storage.local.set({ yt2ai: { prompt, ts: Date.now() } });
-    url = target.inject;
-  } else {
-    const encoded = encodeURIComponent(prompt);
-    url = target.url(encoded.length <= MAX_URL_LEN ? encoded : "");
-  }
-  window.open(url, "_blank");
+  await navigator.clipboard.writeText(prompt); // always: fallback if the fill fails
+  await chrome.storage.local.set({ yt2ai: { prompt, ts: Date.now() } });
+  window.open(AI_TARGETS[s.provider] ?? AI_TARGETS.ChatGPT, "_blank");
   toast(`Opening ${s.provider} (temp chat) — prompt copied, paste (Ctrl+V) if the chat is empty.`);
 }
 
