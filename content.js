@@ -32,12 +32,12 @@ const AI_TARGETS = {
   Gemini:  () => "https://gemini.google.com/app#yt2ai",
 };
 
-// YouTube ships two transcript panels: the new "PAmodern_transcript_view" and the
-// legacy "engagement-panel-searchable-transcript" (kept hidden in the DOM). Prefer new.
+// The transcript can sit in any engagement panel: the new combined "In this video"
+// panel carries target-id=null, older ones use fixed ids (PAmodern_transcript_view,
+// engagement-panel-searchable-transcript). Match them ALL and pick by content below —
+// keying off a hardcoded target-id missed the null panel on some locales/layouts.
 const MODERN = "PAmodern_transcript_view";
-const PANEL_SEL =
-  `ytd-engagement-panel-section-list-renderer[target-id="${MODERN}"],` +
-  'ytd-engagement-panel-section-list-renderer[target-id="engagement-panel-searchable-transcript"]';
+const PANEL_SEL = "ytd-engagement-panel-section-list-renderer";
 const EXPANDED = "ENGAGEMENT_PANEL_VISIBILITY_EXPANDED";
 
 const SEGMENT_SEL = "transcript-segment-view-model, ytd-transcript-segment-renderer";
@@ -46,10 +46,11 @@ function getPanel() {
   const all = [...document.querySelectorAll(PANEL_SEL)];
   return (
     // chaptered videos populate the legacy panel while an empty modern panel
-    // also sits in the DOM — prefer whichever panel actually has segments
+    // also sits in the DOM — prefer whichever panel actually has segments.
+    // No all[0] fallback now that PANEL_SEL matches every panel (comments, ads…):
+    // before segments load, only drive the modern panel for the open step.
     all.find((p) => p.querySelector(SEGMENT_SEL)) ??
     all.find((p) => p.getAttribute("target-id") === MODERN) ??
-    all[0] ??
     null
   );
 }
