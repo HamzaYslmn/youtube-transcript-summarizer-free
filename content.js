@@ -33,26 +33,18 @@ const AI_TARGETS = {
 };
 
 // The transcript can sit in any engagement panel: the new combined "In this video"
-// panel carries target-id=null, older ones use fixed ids (PAmodern_transcript_view,
-// engagement-panel-searchable-transcript). Match them ALL and pick by content below —
-// keying off a hardcoded target-id missed the null panel on some locales/layouts.
-const MODERN = "PAmodern_transcript_view";
+// panel carries target-id=null, older ones use fixed ids. Match them ALL and pick
+// the one that actually holds segments — keying off a hardcoded target-id missed the
+// null panel on some locales/layouts.
 const PANEL_SEL = "ytd-engagement-panel-section-list-renderer";
 const EXPANDED = "ENGAGEMENT_PANEL_VISIBILITY_EXPANDED";
 
 const SEGMENT_SEL = "transcript-segment-view-model, ytd-transcript-segment-renderer";
 
+// The panel that actually holds the transcript — any engagement panel with segments.
+// Comments/ads/chapters panels have none, so they're never matched.
 function getPanel() {
-  const all = [...document.querySelectorAll(PANEL_SEL)];
-  return (
-    // chaptered videos populate the legacy panel while an empty modern panel
-    // also sits in the DOM — prefer whichever panel actually has segments.
-    // No all[0] fallback now that PANEL_SEL matches every panel (comments, ads…):
-    // before segments load, only drive the modern panel for the open step.
-    all.find((p) => p.querySelector(SEGMENT_SEL)) ??
-    all.find((p) => p.getAttribute("target-id") === MODERN) ??
-    null
-  );
+  return [...document.querySelectorAll(PANEL_SEL)].find((p) => p.querySelector(SEGMENT_SEL)) ?? null;
 }
 
 function getTranscriptText() {
@@ -183,9 +175,8 @@ function ensureBar(panel) {
 // fetch (infinite spinner). Only the real "Show transcript" click loads segments —
 // so click it, then undo the scroll jump the click causes.
 function clickShowTranscript() {
-  const btn = document.querySelector(
-    'ytd-video-description-transcript-section-renderer button, button[aria-label="Show transcript"]'
-  );
+  // Match the element, not its label, so it works in every UI language.
+  const btn = document.querySelector("ytd-video-description-transcript-section-renderer button");
   if (!btn) return false;
   // Opening the panel scrolls the page; pin the scroll position back for ~1s
   // (covers YouTube's async focus/scroll) then let go.
@@ -197,25 +188,31 @@ function clickShowTranscript() {
   return true;
 }
 
+// A panel is "the transcript, already opening" if it holds segments or its id names
+// it. Used to avoid re-triggering the toggle — clicking "Show transcript" again, or
+// force-expanding a still-empty panel, is what blocked the transcript / showed a
+// broken empty spinner. When one is already open we just wait for its segments.
+const isTranscriptPanel = (p) =>
+  p.querySelector(SEGMENT_SEL) || (p.getAttribute("target-id") || "").includes("transcript");
+
 function activate() {
   if (!location.pathname.startsWith("/watch")) return;
   let tries = 0;
-  let opened = false;
+  let clicked = false;
   const timer = setInterval(() => {
     // stop when orphaned by an extension reload, or after ~15s (no transcript)
     if (!alive() || ++tries > 30) return clearInterval(timer);
 
-    const panel = getPanel();
-    if (!panel) return;
-
-    ensureBar(panel);
-    // cheap existence check — building the full transcript here would walk
-    // every segment (thousands of nodes on long videos) twice a second
-    if (panel.querySelector(SEGMENT_SEL)) return clearInterval(timer);
-    if (!opened) opened = clickShowTranscript();
-    // ponytail: last resort when no description button exists — panel opens but may spin
-    if (!opened && tries > 6 && panel.getAttribute("visibility") !== EXPANDED)
-      panel.setAttribute("visibility", EXPANDED);
+    const panel = getPanel(); // panel with segments, or null
+    if (panel) {
+      ensureBar(panel);
+      return clearInterval(timer);
+    }
+    // Open the transcript exactly once, and only if nothing is already open/loading.
+    const opening = [...document.querySelectorAll(PANEL_SEL)].some(
+      (p) => p.getAttribute("visibility") === EXPANDED && isTranscriptPanel(p)
+    );
+    if (!clicked && !opening) clicked = clickShowTranscript();
   }, 500);
 }
 
