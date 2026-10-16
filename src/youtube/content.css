@@ -1,0 +1,106 @@
+/* YouTube pill + menu + toast. YouTube's own --yt-spec-* theme variables keep
+   light/dark in sync with the site. */
+#yt2ai, #yt2ai-toast {
+  --yt2ai-fg: var(--yt-spec-text-primary, #f1f1f1);
+  --yt2ai-muted: var(--yt-spec-text-secondary, #aaa);
+  --yt2ai-layer: var(--yt-spec-10-percent-layer, rgba(255, 255, 255, .1));
+  font-family: "Roboto", "Arial", sans-serif;
+}
+
+/* ---- split pill, same build as YouTube's like/dislike: [✦ ChatGPT | ▾] ---- */
+#yt2ai {
+  display: flex; flex: none; margin-right: 8px;
+  align-self: flex-start; /* YouTube's pills sit at the row's top edge */
+  height: var(--yt2ai-h, 36px); /* set from the Like pill's real height */
+  border-radius: 999px; overflow: hidden;
+  background: var(--yt-spec-badge-chip-background, rgba(255, 255, 255, .1));
+  anchor-name: --yt2ai;
+}
+#yt2ai > button {
+  display: flex; align-items: center; gap: 6px; height: 100%; border: none; cursor: pointer;
+  background: none; color: var(--yt2ai-fg); font: 500 14px/20px "Roboto", "Arial", sans-serif;
+  transition: background-color .1s;
+}
+#yt2ai > button:hover, .yt2ai-more:has(+ :popover-open) {
+  background: var(--yt-spec-button-chip-background-hover, rgba(255, 255, 255, .2));
+}
+#yt2ai > button:focus-visible { outline: 2px solid var(--yt2ai-fg); outline-offset: -2px; border-radius: 999px; }
+/* symmetric: 16px outer edges, 12px either side of the divider (chevron glyph has ~5px built in) */
+.yt2ai-send { padding: 0 12px 0 16px; }
+.yt2ai-more { padding: 0 11px 0 7px; position: relative; }
+.yt2ai-more::before {
+  content: ""; position: absolute; left: 0; top: 25%; bottom: 25%; width: 1px; background: var(--yt2ai-layer);
+}
+.yt2ai-icon { width: 24px; height: 24px; flex: none; }
+.yt2ai-more .yt2ai-icon { transition: rotate .15s; }
+.yt2ai-more:has(+ :popover-open) .yt2ai-icon { rotate: 180deg; }
+.yt2ai-more b { display: none; }
+/* busy: the ✦ swaps for a spinner while the transcript loads */
+.yt2ai-spinner { display: none; animation: yt2ai-spin .8s linear infinite; }
+#yt2ai[aria-busy="true"] .yt2ai-send { cursor: progress; }
+#yt2ai[aria-busy="true"] .yt2ai-send .yt2ai-icon:not(.yt2ai-spinner) { display: none; }
+#yt2ai[aria-busy="true"] .yt2ai-spinner { display: block; }
+@keyframes yt2ai-spin { to { rotate: 360deg; } }
+/* narrow layouts: icon-only, so YouTube's row keeps its own buttons */
+@media (max-width: 656px) {
+  #yt2ai[data-layout="watch"] .yt2ai-send span { display: none; }
+  #yt2ai[data-layout="watch"] .yt2ai-send { padding: 0 8px 0 12px; }
+}
+
+/* ---- Shorts: round 48px button + "AI ▾" label, like the Like/Share column ---- */
+#yt2ai[data-layout="shorts"] {
+  flex-direction: column; align-items: center; height: auto; margin: 0 0 16px;
+  background: none; border-radius: 0; overflow: visible;
+}
+#yt2ai[data-layout="shorts"] .yt2ai-send {
+  justify-content: center; width: 48px; height: 48px; padding: 0; border-radius: 50%;
+  background: var(--yt-spec-badge-chip-background, rgba(255, 255, 255, .1));
+}
+#yt2ai[data-layout="shorts"] .yt2ai-send span { display: none; }
+#yt2ai[data-layout="shorts"] .yt2ai-more {
+  gap: 0; height: auto; margin-top: 4px; padding: 0 0 0 4px; border-radius: 4px;
+  font-size: 12px; line-height: 18px;
+}
+#yt2ai[data-layout="shorts"] .yt2ai-more:hover { background: none; text-decoration: underline; }
+#yt2ai[data-layout="shorts"] .yt2ai-more::before { display: none; }
+#yt2ai[data-layout="shorts"] .yt2ai-more b { display: inline; font-weight: 400; }
+#yt2ai[data-layout="shorts"] .yt2ai-more .yt2ai-icon { width: 18px; height: 18px; }
+
+/* ---- menu: popover + CSS anchor positioning (no JS layout; Esc + click-outside for free) ---- */
+#yt2ai-menu {
+  position-anchor: --yt2ai; position-area: bottom span-right;
+  position-try-fallbacks: bottom span-left, top span-right, top span-left;
+  inset: auto; margin: 6px 0; min-width: 240px; padding: 8px 0;
+  border: none; border-radius: 12px;
+  background: var(--yt-spec-menu-background, #282828); color: var(--yt2ai-fg);
+  box-shadow: 0 4px 32px rgba(0, 0, 0, .3);
+  font: 400 14px/20px "Roboto", "Arial", sans-serif;
+  /* fade/slide in and out; allow-discrete keeps it rendered during the exit */
+  transition: opacity .12s, translate .12s, display .12s allow-discrete, overlay .12s allow-discrete;
+}
+#yt2ai-menu:not(:popover-open) { opacity: 0; translate: 0 -4px; }
+@starting-style { #yt2ai-menu:popover-open { opacity: 0; translate: 0 -4px; } }
+#yt2ai-menu button {
+  display: flex; align-items: center; gap: 16px; width: 100%; height: 36px; padding: 0 16px;
+  border: none; outline: none; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer;
+}
+#yt2ai-menu button:is(:hover, :focus-visible) { background: var(--yt2ai-layer); }
+#yt2ai-menu small { margin-left: auto; color: var(--yt2ai-muted); font-size: 12px; visibility: hidden; }
+#yt2ai-menu .is-default small { visibility: visible; }
+#yt2ai-menu hr { border: none; height: 1px; margin: 8px 0; background: var(--yt2ai-layer); }
+
+#yt2ai-toast {
+  position: fixed; left: 12px; bottom: 12px; z-index: 9999; max-width: min(420px, calc(100vw - 24px));
+  padding: 14px 16px; border-radius: 8px; box-sizing: border-box;
+  background: var(--yt-spec-text-primary, #f1f1f1); color: var(--yt-spec-text-primary-inverse, #0f0f0f);
+  font: 400 14px/20px "Roboto", "Arial", sans-serif;
+  opacity: 0; translate: 0 8px; transition: opacity .15s, translate .15s; pointer-events: none;
+}
+#yt2ai-toast.show { opacity: 1; translate: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  #yt2ai *, #yt2ai-menu, #yt2ai-toast { transition: none !important; animation: none !important; }
+}
+
+/* set by player.js while it briefly enables captions to grab the track URL */
+.yt2ai-hide-cc .ytp-caption-window-container { display: none !important; }

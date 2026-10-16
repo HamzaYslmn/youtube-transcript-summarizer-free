@@ -1,0 +1,86 @@
+<!doctype html>
+<meta charset="utf-8" />
+<style>
+  :root {
+    color-scheme: light dark;
+    --grad: linear-gradient(90deg, #3d8bff, #a855f7); /* matches the sparkle icon */
+    --accent: #a855f7;
+    --bg: light-dark(#fff, #0f0f0f);
+    --layer: light-dark(rgba(0, 0, 0, .06), rgba(255, 255, 255, .1));
+    --muted: light-dark(#606060, #aaa);
+  }
+  body {
+    font: 13px/1.4 Roboto, Arial, sans-serif; width: 300px; margin: 0; padding: 14px;
+    display: flex; flex-direction: column; gap: 10px; background: var(--bg);
+  }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  header { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  h1 { font-size: 15px; margin: 0; }
+  h1 span { background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  #sponsor {
+    padding: 4px 10px; border-radius: 999px; font-weight: 600; font-size: 12px; text-decoration: none;
+    color: light-dark(#c2185b, #ff8fb3); background: light-dark(#fdf0f5, #3a2530);
+  }
+  #sponsor:hover { filter: brightness(1.1); }
+  .label { color: var(--muted); font-size: 12px; margin-bottom: -4px; }
+
+  #providers { display: flex; gap: 2px; padding: 3px; border-radius: 10px; background: var(--layer); }
+  #providers button {
+    flex: 1; height: 30px; border: none; border-radius: 8px; cursor: pointer;
+    background: none; color: inherit; font: 500 13px Roboto, Arial, sans-serif;
+  }
+  #providers button:hover { background: var(--layer); }
+  #providers [aria-checked="true"] { background: var(--grad); color: #fff; }
+
+  textarea {
+    box-sizing: border-box; width: 100%; min-height: 72px; max-height: 220px; resize: none;
+    field-sizing: content; /* grows with the text, no JS */
+    padding: 8px 10px; border-radius: 8px; border: 1px solid var(--layer);
+    background: transparent; color: inherit; font: 13px/18px Roboto, Arial, sans-serif;
+  }
+  textarea::placeholder { color: var(--muted); }
+  textarea:focus { outline: none; border-color: var(--accent); }
+
+  /* switch = a real checkbox (role=switch) restyled */
+  .sw { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 2px; cursor: pointer; }
+  .sw small { display: block; color: var(--muted); font-size: 11px; }
+  .sw input {
+    appearance: none; flex: none; margin: 0; width: 32px; height: 18px; border-radius: 9px; cursor: pointer;
+    background: var(--layer); position: relative; transition: background-color .15s;
+  }
+  .sw input::before {
+    content: ""; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%;
+    background: #fff; box-shadow: 0 1px 2px rgba(0, 0, 0, .3); transition: translate .15s;
+  }
+  .sw input:checked { background: var(--accent); }
+  .sw input:checked::before { translate: 14px; }
+
+  details { border-top: 1px solid var(--layer); padding-top: 8px; }
+  summary { cursor: pointer; color: var(--muted); }
+  #preview {
+    margin-top: 6px; border-radius: 8px; padding: 8px 10px; background: var(--layer);
+    font: 11px/1.5 ui-monospace, Consolas, monospace; color: var(--muted); white-space: pre-wrap;
+  }
+</style>
+
+<header>
+  <h1><span>✦</span> Transcript to AI</h1>
+  <a id="sponsor" href="https://github.com/sponsors/HamzaYslmn" target="_blank">❤️ Sponsor</a>
+</header>
+
+<div class="label">Default AI (the ✦ button on YouTube)</div>
+<div id="providers" role="radiogroup" aria-label="Default AI"></div>
+
+<div class="label">Prompt</div>
+<textarea id="prompt" placeholder="Leave empty to send only the transcript."></textarea>
+
+<label class="sw"><span>Temporary chat<small>Not saved to your AI history</small></span><input type="checkbox" role="switch" data-key="tempChat" /></label>
+<label class="sw"><span>Include video description</span><input type="checkbox" role="switch" data-key="includeDescription" /></label>
+
+<details>
+  <summary>Message format</summary>
+  <div id="preview"></div>
+</details>
+
+<script src="../shared/settings.js"></script>
+<script src="popup.js"></script>
