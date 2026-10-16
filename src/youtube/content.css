@@ -16,6 +16,7 @@
   background: var(--yt-spec-badge-chip-background, rgba(255, 255, 255, .1));
   anchor-name: --yt2ai;
 }
+#yt2ai[hidden] { display: none; } /* video has no captions */
 #yt2ai > button {
   display: flex; align-items: center; gap: 6px; height: 100%; border: none; cursor: pointer;
   background: none; color: var(--yt2ai-fg); font: 500 14px/20px "Roboto", "Arial", sans-serif;

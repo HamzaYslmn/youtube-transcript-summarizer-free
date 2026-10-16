@@ -43,3 +43,21 @@ views.add(() => {
   );
 });
 refresh();
+
+// Version + update check. Unpacked extensions can't update themselves (Chrome won't
+// let them rewrite their own files), so a newer GitHub version gets a download link.
+const current = chrome.runtime.getManifest().version;
+$("#version").textContent = `v${current}`;
+fetch("https://raw.githubusercontent.com/HamzaYslmn/youtube-transcript-summarizer-free/main/manifest.json")
+  .then((r) => r.json())
+  .then(({ version }) => {
+    const cmp = version.localeCompare(current, undefined, { numeric: true });
+    if (cmp < 0) return ($("#version").textContent += ` · ahead of GitHub (v${version})`); // local dev build
+    if (cmp === 0) return ($("#version").textContent += " · up to date");
+    $("#version").replaceChildren(Object.assign(document.createElement("a"), {
+      id: "update", target: "_blank", textContent: `Update to v${version} ↓`,
+      href: "https://github.com/HamzaYslmn/youtube-transcript-summarizer-free/archive/refs/heads/main.zip",
+      title: "Extract over your extension folder, then press reload on chrome://extensions",
+    }));
+  })
+  .catch(() => {}); // offline: just the version

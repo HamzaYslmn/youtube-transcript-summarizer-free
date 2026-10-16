@@ -61,6 +61,14 @@
     margin-top: 6px; border-radius: 8px; padding: 8px 10px; background: var(--layer);
     font: 11px/1.5 ui-monospace, Consolas, monospace; color: var(--muted); white-space: pre-wrap;
   }
+
+  footer {
+    display: flex; justify-content: space-between; gap: 8px; padding-top: 8px;
+    border-top: 1px solid var(--layer); color: var(--muted); font-size: 12px;
+  }
+  footer a { color: inherit; }
+  footer a:hover { color: var(--accent); }
+  #update { color: var(--accent); font-weight: 600; }
 </style>
 
 <header>
@@ -81,6 +89,11 @@
   <summary>Message format</summary>
   <div id="preview"></div>
 </details>
+
+<footer>
+  <a href="https://github.com/HamzaYslmn/youtube-transcript-summarizer-free" target="_blank">GitHub</a>
+  <span id="version"></span>
+</footer>
 
 <script src="../shared/settings.js"></script>
 <script src="popup.js"></script>

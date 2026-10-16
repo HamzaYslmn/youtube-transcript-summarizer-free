@@ -18,14 +18,14 @@ const AI_URLS = {
 // ---- transcript (asks player.js, which runs in the page's MAIN world) ----
 
 let reqId = 0;
-function fromPlayer() {
+function fromPlayer(peek = false) {
   const id = ++reqId;
   return new Promise((resolve) => {
     const done = (v) => { removeEventListener("message", on); resolve(v); };
     const on = (ev) => ev.source === window && ev.data?.type === "yt2ai:res" && ev.data.id === id && done(ev.data);
     addEventListener("message", on);
     setTimeout(() => done({}), 12000); // worst case: every fallback in player.js
-    postMessage({ type: "yt2ai:req", id });
+    postMessage({ type: "yt2ai:req", id, peek });
   });
 }
 
@@ -178,6 +178,19 @@ async function ensureBar() {
   if (h) bar.style.setProperty("--yt2ai-h", h + "px");
 }
 
-const onPage = () => alive() && /^\/(watch|shorts\/|live\/)/.test(location.pathname) && settingsReady.then(ensureBar);
+// No caption tracks at all → hide the whole pill: every action needs a transcript.
+// Unknown (player still loading this video, or an ad) → keep it, retry ~10s, then show.
+async function hideIfNoCaptions() {
+  const href = location.href;
+  for (let i = 0; i < 20; i++) {
+    const { has } = await fromPlayer(true);
+    const bar = document.getElementById("yt2ai");
+    if (location.href !== href || !bar) return; // navigated away; that page runs its own check
+    if (has != null || i === 19) return (bar.hidden = has === false);
+    await new Promise((r) => setTimeout(r, 500));
+  }
+}
+
+const onPage = () => alive() && /^\/(watch|shorts\/|live\/)/.test(location.pathname) && settingsReady.then(ensureBar).then(hideIfNoCaptions);
 addEventListener("yt-navigate-finish", onPage);
 onPage();

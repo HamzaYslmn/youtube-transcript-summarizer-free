@@ -117,13 +117,16 @@ async function viaPanel() {
 const urlVideoId = () =>
   new URLSearchParams(location.search).get("v") ?? location.pathname.match(/^\/(?:shorts|live)\/([\w-]{11})/)?.[1];
 
+// the player showing this video (#movie_player on /watch, #shorts-player on Shorts)
+const playerFor = (videoId) => [...document.querySelectorAll(".html5-video-player")].find((p) => p.getVideoData?.().video_id === videoId);
+const hasTracks = (pr) => !!pr.captions?.playerCaptionsTracklistRenderer?.captionTracks?.length;
+
 async function load(videoId) {
-  // the player showing this video (#movie_player on /watch, #shorts-player on Shorts)
-  const player = [...document.querySelectorAll(".html5-video-player")].find((p) => p.getVideoData?.().video_id === videoId);
+  const player = playerFor(videoId);
   const pr = player?.getPlayerResponse?.();
   let details = pr?.videoDetails;
   const meta = () => ({ title: details?.title ?? document.title.replace(/ - YouTube$/, ""), description: details?.shortDescription ?? "" });
-  if (pr && !pr.captions?.playerCaptionsTracklistRenderer?.captionTracks?.length) return { ...meta(), lines: [] }; // no captions at all
+  if (pr && !hasTracks(pr)) return { ...meta(), lines: [] }; // no captions at all
 
   // The player doesn't load captions during an ad, so skip straight to source 2.
   const ad = player?.classList.contains("ad-showing");
@@ -140,6 +143,10 @@ const cache = new Map(); // videoId → Promise<result>, successes only
 addEventListener("message", async (ev) => {
   if (ev.source !== window || ev.data?.type !== "yt2ai:req") return;
   const videoId = urlVideoId();
+  if (ev.data.peek) { // cheap "does it have captions?" — null while the player hasn't loaded this video yet
+    const pr = playerFor(videoId)?.getPlayerResponse?.();
+    return postMessage({ type: "yt2ai:res", id: ev.data.id, has: pr ? hasTracks(pr) : null });
+  }
   let res;
   try {
     if (!videoId) throw new Error("no video on this page");
